@@ -507,7 +507,6 @@ async def logout(response: Response, session: str = Cookie(default=None)):
 async def admin_dashboard(_=Depends(require_admin)):
     db = get_db()
 
-    # Total scans per route
     route_rows = db.execute("""
         SELECT route, COUNT(*) as total,
                MAX(scanned_at) as last_scan
@@ -516,7 +515,6 @@ async def admin_dashboard(_=Depends(require_admin)):
         ORDER BY total DESC
     """).fetchall()
 
-    # Scans in last 7 days by day
     daily_rows = db.execute("""
         SELECT date(scanned_at) as day, COUNT(*) as cnt
         FROM scans
@@ -525,7 +523,6 @@ async def admin_dashboard(_=Depends(require_admin)):
         ORDER BY day
     """).fetchall()
 
-    # Recent scans
     recent = db.execute("""
         SELECT route, ip, user_agent, scanned_at
         FROM scans
@@ -535,144 +532,478 @@ async def admin_dashboard(_=Depends(require_admin)):
 
     db.close()
 
-    total_all = sum(r["total"] for r in route_rows)
+    total_all  = sum(r["total"] for r in route_rows)
+    last7_total = sum(r["cnt"] for r in daily_rows)
+
+    # Fill in all 7 days (so chart always shows full week, not just days with data)
+    day_map = {r["day"]: r["cnt"] for r in daily_rows}
+    chart_labels = []
+    chart_counts = []
+    for i in range(6, -1, -1):
+        d = (datetime.utcnow() - timedelta(days=i)).strftime("%Y-%m-%d")
+        chart_labels.append(d)
+        chart_counts.append(day_map.get(d, 0))
 
     esc = html_mod.escape
 
-    # Build route table rows
+    # Route table rows
     route_html = ""
     for r in route_rows:
         label = esc(_route_label(r["route"]))
-        pct = round(r["total"] / total_all * 100) if total_all else 0
-        last = esc(r["last_scan"][:16].replace("T", " ")) if r["last_scan"] else "—"
+        pct   = round(r["total"] / total_all * 100) if total_all else 0
+        last  = esc(r["last_scan"][:16].replace("T", " ")) if r["last_scan"] else "—"
         route_html += f"""
         <tr>
           <td><span class="badge">{esc(r['route'])}</span></td>
-          <td>{label}</td>
-          <td><strong>{r['total']}</strong></td>
-          <td>
-            <div class="bar-wrap"><div class="bar" style="width:{pct}%"></div></div>
+          <td class="td-label">{label}</td>
+          <td class="td-num">{r['total']}</td>
+          <td class="td-share">
+            <div class="bar-track"><div class="bar-fill" style="width:{pct}%"></div></div>
+            <span class="pct-label">{pct}%</span>
           </td>
-          <td class="muted">{last}</td>
+          <td class="td-date">{last}</td>
         </tr>"""
 
-    # Build daily chart data
-    daily_labels = [r["day"] for r in daily_rows]
-    daily_counts = [r["cnt"] for r in daily_rows]
-
-    # Recent scans table
+    # Recent scans rows — parse UA into something readable
     recent_html = ""
     for r in recent:
-        ua_short = r["user_agent"][:48] + "…" if r["user_agent"] and len(r["user_agent"]) > 48 else (r["user_agent"] or "—")
-        ts = esc(r["scanned_at"][:16].replace("T", " "))
+        ua = r["user_agent"] or ""
+        # Extract device hint from UA
+        if "curl" in ua.lower():
+            ua_display = "curl"
+        elif "Android" in ua:
+            ua_display = "Android"
+        elif "iPhone" in ua:
+            ua_display = "iPhone"
+        elif "Windows" in ua:
+            ua_display = "Windows"
+        elif "Mac" in ua:
+            ua_display = "Mac"
+        elif "Linux" in ua:
+            ua_display = "Linux"
+        else:
+            ua_display = ua[:32] + "…" if len(ua) > 32 else (ua or "—")
+
+        ts    = esc(r["scanned_at"][:16].replace("T", " ")) if r["scanned_at"] else "—"
+        ip    = esc(r["ip"] or "—")
         recent_html += f"""
         <tr>
           <td><span class="badge">{esc(r['route'])}</span></td>
-          <td class="muted">{esc(r['ip'] or '—')}</td>
-          <td class="muted small">{esc(ua_short)}</td>
-          <td class="muted">{ts}</td>
+          <td class="td-ip">{ip}</td>
+          <td><span class="ua-pill">{esc(ua_display)}</span></td>
+          <td class="td-date">{ts}</td>
         </tr>"""
 
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Admin — Feest Links</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin · Feest Links</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="{FONT}" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <style>
-    *{{box-sizing:border-box;margin:0;padding:0}}
-    body{{font-family:'Montserrat',sans-serif;background:#F5F5F5;color:#2F2F2F;min-height:100vh}}
-    header{{background:#fff;border-bottom:1px solid #eee;padding:16px 32px;display:flex;align-items:center;justify-content:space-between}}
-    header h1{{font-size:18px;font-weight:800}}header h1 span{{color:#F7715B}}
-    header a{{font-size:13px;font-weight:600;color:#9E9E9E;text-decoration:none}}
-    header a:hover{{color:#F7715B}}
-    .main{{max-width:1100px;margin:0 auto;padding:32px 24px;display:flex;flex-direction:column;gap:28px}}
-    .stats-row{{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px}}
-    .stat-card{{background:#fff;border-radius:16px;padding:20px 24px;box-shadow:0 2px 12px rgba(0,0,0,.05)}}
-    .stat-card .val{{font-size:32px;font-weight:800;color:#F7715B}}
-    .stat-card .lbl{{font-size:12px;font-weight:600;color:#9E9E9E;margin-top:4px}}
-    .panel{{background:#fff;border-radius:16px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,.05)}}
-    .panel h2{{font-size:15px;font-weight:700;margin-bottom:20px}}
-    table{{width:100%;border-collapse:collapse;font-size:13px}}
-    th{{text-align:left;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#9E9E9E;padding-bottom:12px;border-bottom:1px solid #f0f0f0}}
-    td{{padding:10px 0;border-bottom:1px solid #f8f8f8;vertical-align:middle}}
-    tr:last-child td{{border:none}}
-    .badge{{background:#FFF6E8;color:#F7715B;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;display:inline-block}}
-    .bar-wrap{{background:#f5f5f5;border-radius:999px;height:6px;width:120px}}
-    .bar{{background:#F7715B;border-radius:999px;height:6px;transition:width .4s}}
-    .muted{{color:#9E9E9E}}
-    .small{{font-size:12px}}
-    canvas{{max-height:200px}}
-    @media(max-width:600px){{.main{{padding:20px 14px}};header{{padding:14px 16px}}}}
+    *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
+
+    :root {{
+      --coral:   #F7715B;
+      --dark:    #111111;
+      --bg:      #F4F4F5;
+      --surface: #FFFFFF;
+      --border:  #E4E4E7;
+      --muted:   #A1A1AA;
+      --text:    #18181B;
+      --r:       14px;
+    }}
+
+    body {{
+      font-family: 'Montserrat', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }}
+
+    /* ── Header ── */
+    header {{
+      background: var(--dark);
+      padding: 0 32px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }}
+
+    .header-brand {{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }}
+
+    .header-logo {{
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--coral);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+    }}
+
+    .header-title {{
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }}
+
+    .header-title span {{ color: var(--coral); }}
+
+    .signout {{
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 6px 14px;
+      border: 1px solid #333;
+      border-radius: 8px;
+      transition: color .15s, border-color .15s;
+    }}
+
+    .signout:hover {{ color: #fff; border-color: #666; }}
+
+    /* ── Layout ── */
+    .main {{
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }}
+
+    .page-title {{
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }}
+
+    .page-subtitle {{
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }}
+
+    /* ── Stat cards ── */
+    .stats-grid {{
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }}
+
+    .stat-card {{
+      background: var(--surface);
+      border-radius: var(--r);
+      padding: 22px 24px;
+      border: 1px solid var(--border);
+    }}
+
+    .stat-icon {{
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #FFF1EE;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }}
+
+    .stat-icon svg {{ width: 18px; height: 18px; }}
+
+    .stat-num {{
+      font-size: 30px;
+      font-weight: 800;
+      color: var(--dark);
+      line-height: 1;
+    }}
+
+    .stat-lbl {{
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }}
+
+    /* ── Panels ── */
+    .panel {{
+      background: var(--surface);
+      border-radius: var(--r);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }}
+
+    .panel-header {{
+      padding: 20px 24px 0;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }}
+
+    .panel-title {{
+      font-size: 14px;
+      font-weight: 700;
+    }}
+
+    .panel-meta {{
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }}
+
+    .chart-wrap {{
+      padding: 0 24px 24px;
+    }}
+
+    /* ── Tables ── */
+    table {{
+      width: 100%;
+      border-collapse: collapse;
+    }}
+
+    thead th {{
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0 24px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }}
+
+    tbody tr {{
+      transition: background .1s;
+    }}
+
+    tbody tr:hover {{ background: #FAFAFA; }}
+
+    tbody td {{
+      padding: 13px 24px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      vertical-align: middle;
+    }}
+
+    tbody tr:last-child td {{ border-bottom: none; }}
+
+    /* Column widths */
+    .td-label {{ font-weight: 600; color: var(--text); }}
+    .td-num   {{ font-size: 15px; font-weight: 800; color: var(--dark); width: 60px; }}
+    .td-date  {{ color: var(--muted); font-size: 12px; white-space: nowrap; }}
+    .td-ip    {{ color: var(--muted); font-size: 12px; font-family: monospace; white-space: nowrap; }}
+
+    .td-share {{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+    }}
+
+    .bar-track {{
+      flex: 1;
+      max-width: 100px;
+      height: 5px;
+      background: #F0F0F0;
+      border-radius: 999px;
+      overflow: hidden;
+    }}
+
+    .bar-fill {{
+      height: 5px;
+      background: var(--coral);
+      border-radius: 999px;
+    }}
+
+    .pct-label {{
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      min-width: 28px;
+    }}
+
+    /* ── Badges ── */
+    .badge {{
+      display: inline-block;
+      background: #F4F4F5;
+      color: #52525B;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 6px;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+    }}
+
+    .ua-pill {{
+      display: inline-block;
+      background: #EFF6FF;
+      color: #3B82F6;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 6px;
+    }}
+
+    .empty {{
+      padding: 40px 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }}
+
+    @media (max-width: 640px) {{
+      .main {{ padding: 20px 16px 48px; }}
+      header {{ padding: 0 16px; }}
+      .stats-grid {{ grid-template-columns: 1fr; gap: 12px; }}
+      thead th, tbody td {{ padding-left: 16px; padding-right: 16px; }}
+      .td-share {{ display: none; }}
+    }}
   </style>
 </head>
 <body>
+
 <header>
-  <h1>Feest <span>Links</span> Admin</h1>
-  <a href="/xadmin/logout">Sign out</a>
+  <div class="header-brand">
+    <div class="header-logo">F</div>
+    <span class="header-title">Feest <span>Links</span></span>
+  </div>
+  <a class="signout" href="/xadmin/logout">Sign out</a>
 </header>
+
 <div class="main">
 
-  <!-- Stat cards -->
-  <div class="stats-row">
+  <div>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">QR scan analytics for all active routes</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
     <div class="stat-card">
-      <div class="val">{total_all}</div>
-      <div class="lbl">Total Scans</div>
+      <div class="stat-icon">
+        <svg viewBox="0 0 20 20" fill="none" stroke="#F7715B" stroke-width="1.8" stroke-linecap="round">
+          <path d="M10 2v16M2 10h16"/>
+        </svg>
+      </div>
+      <div class="stat-num">{total_all}</div>
+      <div class="stat-lbl">Total Scans</div>
     </div>
     <div class="stat-card">
-      <div class="val">{len(route_rows)}</div>
-      <div class="lbl">Active Routes</div>
+      <div class="stat-icon">
+        <svg viewBox="0 0 20 20" fill="none" stroke="#F7715B" stroke-width="1.8" stroke-linecap="round">
+          <rect x="3" y="3" width="14" height="14" rx="2"/>
+          <path d="M7 10h6M10 7v6"/>
+        </svg>
+      </div>
+      <div class="stat-num">{len(route_rows)}</div>
+      <div class="stat-lbl">Active Routes</div>
     </div>
     <div class="stat-card">
-      <div class="val">{sum(r['cnt'] for r in daily_rows)}</div>
-      <div class="lbl">Last 7 Days</div>
+      <div class="stat-icon">
+        <svg viewBox="0 0 20 20" fill="none" stroke="#F7715B" stroke-width="1.8" stroke-linecap="round">
+          <rect x="2" y="4" width="16" height="14" rx="2"/>
+          <path d="M14 2v4M6 2v4M2 9h16"/>
+        </svg>
+      </div>
+      <div class="stat-num">{last7_total}</div>
+      <div class="stat-lbl">Last 7 Days</div>
     </div>
   </div>
 
-  <!-- Daily chart -->
+  <!-- Chart -->
   <div class="panel">
-    <h2>Scans — Last 7 Days</h2>
-    <canvas id="chart"></canvas>
+    <div class="panel-header">
+      <span class="panel-title">Scan Activity</span>
+      <span class="panel-meta">Last 7 days</span>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="chart" style="max-height:180px"></canvas>
+    </div>
   </div>
 
-  <!-- Per-route breakdown -->
+  <!-- Routes table -->
   <div class="panel">
-    <h2>Scans by Route</h2>
-    <table>
-      <thead><tr><th>Route</th><th>Label</th><th>Total</th><th>Share</th><th>Last Scan</th></tr></thead>
-      <tbody>{route_html or '<tr><td colspan=5 class="muted">No scans yet.</td></tr>'}</tbody>
-    </table>
+    <div class="panel-header">
+      <span class="panel-title">Scans by Route</span>
+      <span class="panel-meta">{len(route_rows)} route{"s" if len(route_rows) != 1 else ""}</span>
+    </div>
+    {"<table><thead><tr><th>Route</th><th>Label</th><th>Total</th><th>Share</th><th>Last Scan</th></tr></thead><tbody>" + route_html + "</tbody></table>" if route_rows else '<div class="empty">No scans recorded yet.</div>'}
   </div>
 
   <!-- Recent scans -->
   <div class="panel">
-    <h2>Recent Scans (last 30)</h2>
-    <table>
-      <thead><tr><th>Route</th><th>IP</th><th>User Agent</th><th>Time (UTC)</th></tr></thead>
-      <tbody>{recent_html or '<tr><td colspan=4 class="muted">No scans yet.</td></tr>'}</tbody>
-    </table>
+    <div class="panel-header">
+      <span class="panel-title">Recent Scans</span>
+      <span class="panel-meta">Last 30</span>
+    </div>
+    {"<table><thead><tr><th>Route</th><th>IP</th><th>Device</th><th>Time (UTC)</th></tr></thead><tbody>" + recent_html + "</tbody></table>" if recent else '<div class="empty">No scans recorded yet.</div>'}
   </div>
 
 </div>
+
 <script>
 new Chart(document.getElementById('chart'), {{
   type: 'bar',
   data: {{
-    labels: {daily_labels},
+    labels: {chart_labels},
     datasets: [{{
       label: 'Scans',
-      data: {daily_counts},
+      data: {chart_counts},
       backgroundColor: '#F7715B',
+      hoverBackgroundColor: '#e55a44',
       borderRadius: 6,
+      borderSkipped: false,
     }}]
   }},
   options: {{
     responsive: true,
-    plugins: {{ legend: {{ display: false }} }},
+    maintainAspectRatio: true,
+    plugins: {{
+      legend: {{ display: false }},
+      tooltip: {{
+        backgroundColor: '#111',
+        titleColor: '#fff',
+        bodyColor: '#aaa',
+        padding: 10,
+        cornerRadius: 8,
+        callbacks: {{
+          title: (items) => items[0].label,
+          label: (item) => `  ${{item.raw}} scan${{item.raw !== 1 ? 's' : ''}}`,
+        }}
+      }}
+    }},
     scales: {{
-      y: {{ beginAtZero: true, ticks: {{ precision: 0 }} }},
-      x: {{ grid: {{ display: false }} }}
+      y: {{
+        beginAtZero: true,
+        ticks: {{ precision: 0, color: '#A1A1AA', font: {{ family: 'Montserrat', size: 11 }} }},
+        grid: {{ color: '#F0F0F0' }},
+        border: {{ display: false }}
+      }},
+      x: {{
+        ticks: {{ color: '#A1A1AA', font: {{ family: 'Montserrat', size: 11 }}, maxRotation: 0 }},
+        grid: {{ display: false }},
+        border: {{ display: false }}
+      }}
     }}
   }}
 }});
