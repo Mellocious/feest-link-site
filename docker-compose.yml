@@ -1,0 +1,41 @@
+services:
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: feest-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - .:/srv/link:ro                          # static files (index.html, logo.png)
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    networks:
+      - feest
+
+  api:
+    build: ./api
+    container_name: feest-api
+    restart: unless-stopped
+    environment:
+      - ADMIN_USER=${ADMIN_USER:-feestadmin}
+      - ADMIN_PASS=${ADMIN_PASS:-changeme123}
+      - SECRET_KEY=${SECRET_KEY:-changethis}
+    volumes:
+      - ./data:/app/data                        # SQLite DB + photos persist here
+    networks:
+      - feest
+    expose:
+      - "8000"
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  feest:
+    driver: bridge
