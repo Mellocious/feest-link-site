@@ -68,7 +68,7 @@ def init_db():
         ("damilare", "Damilare Adebisi",  "Head of Marketing", "09037379543",  "dami@usefeest.com",   "https://www.linkedin.com/in/adebisi-oluwadamilare-7575111a3"),
         ("fejulo",   "Fejulo Afolabi",    "Head of Finance",   "09060740993",  "fejulo@usefeest.com", "https://www.linkedin.com/in/afofej"),
         ("melvin",   "Melvin Senne-Aya",  "Co-Founder & COO",  "09135572082",  "melvin@usefeest.com", "https://www.linkedin.com/in/melvin-ogh"),
-        ("gift",     "Gift Akobundu",     "Co-Founder & CEO",  None,           "ghift@usefeest.com",  "https://www.linkedin.com/in/gh-ft"),
+        ("gift",     "Gift Akobundu",     "Co-Founder & CEO",  "09130387630",  "ghift@usefeest.com",  "https://www.linkedin.com/in/gh-ft"),
     ]
     db.executemany("""
         INSERT OR IGNORE INTO members (slug, full_name, role, phone, email, linkedin)
