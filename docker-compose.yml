@@ -23,10 +23,12 @@ services:
     restart: unless-stopped
     environment:
       - ADMIN_USER=${ADMIN_USER:-feestadmin}
-      - ADMIN_PASS=${ADMIN_PASS:-changeme123}
-      - SECRET_KEY=${SECRET_KEY:-changethis}
+      - ADMIN_PASS=${ADMIN_PASS}
+      - SECRET_KEY=${SECRET_KEY}
     volumes:
       - ./data:/app/data                        # SQLite DB + photos persist here
+      - ./index.html:/app/static/index.html:ro
+      - ./logo.png:/app/static/logo.png:ro
     networks:
       - feest
     expose:

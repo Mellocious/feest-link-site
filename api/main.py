@@ -1,16 +1,19 @@
 import os
+import html as html_mod
+import re
+import hmac
 import sqlite3
 import hashlib
 import secrets
 import base64
 from datetime import datetime, timedelta
+from time import time as _time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request, Response, HTTPException, Depends, Form, Cookie
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
 # ─────────────────────────────────────────
 # Config
@@ -19,10 +22,18 @@ BASE_DIR   = Path(__file__).parent
 DB_PATH    = BASE_DIR / "data" / "feest.db"
 PHOTOS_DIR = BASE_DIR / "data" / "photos"
 ADMIN_USER = os.getenv("ADMIN_USER", "feestadmin")
-ADMIN_PASS = os.getenv("ADMIN_PASS", "changeme123")
-SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_hex(32))
+ADMIN_PASS = os.getenv("ADMIN_PASS", "")
+if not ADMIN_PASS:
+    raise RuntimeError("ADMIN_PASS must be set in the environment")
+SECRET_KEY = os.getenv("SECRET_KEY", "")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY must be set in the environment")
 
 SESSION_TTL_HOURS = 8
+SLUG_PATTERN = re.compile(r"^[a-z0-9-]+$")
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_WINDOW_SECONDS = 900
+_login_attempts: dict[str, list[float]] = {}
 
 # ─────────────────────────────────────────
 # DB helpers
@@ -108,6 +119,37 @@ def require_admin(session: str = Cookie(default=None)):
     return True
 
 # ─────────────────────────────────────────
+# Slug validation
+# ─────────────────────────────────────────
+def validate_slug(slug: str) -> str:
+    s = slug.lower()
+    if not SLUG_PATTERN.match(s):
+        raise HTTPException(status_code=400, detail="Invalid slug")
+    return s
+
+# ─────────────────────────────────────────
+# Rate limiting
+# ─────────────────────────────────────────
+def _client_ip(request: Request) -> str:
+    return request.headers.get("x-forwarded-for", request.client.host if request.client else "")
+
+def _check_rate_limit(ip: str):
+    now = _time()
+    attempts = _login_attempts.get(ip, [])
+    attempts = [t for t in attempts if now - t < LOGIN_WINDOW_SECONDS]
+    _login_attempts[ip] = attempts
+    if len(attempts) >= LOGIN_MAX_ATTEMPTS:
+        raise HTTPException(status_code=302, headers={
+            "Location": "/xadmin/login?error=Too+many+attempts.+Try+again+in+15+minutes."
+        })
+
+def _record_failed_login(ip: str):
+    _login_attempts.setdefault(ip, []).append(_time())
+
+def _clear_login_attempts(ip: str):
+    _login_attempts.pop(ip, None)
+
+# ─────────────────────────────────────────
 # Lifespan
 # ─────────────────────────────────────────
 @asynccontextmanager
@@ -155,13 +197,20 @@ COLORS = """
 }
 """
 
-def base_head(title: str) -> str:
+def base_head(title: str, og_title: str = "", og_description: str = "", og_image: str = "") -> str:
+    esc_title = html_mod.escape(title)
+    og_block = ""
+    if og_title or og_description or og_image:
+        og_block = f"""
+  <meta property="og:title" content="{html_mod.escape(og_title or title)}"/>
+  <meta property="og:description" content="{html_mod.escape(og_description)}"/>
+  <meta property="og:image" content="{html_mod.escape(og_image)}"/>"""
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>{title}</title>
+  <title>{esc_title}</title>{og_block}
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="{FONT}" rel="stylesheet"/>
@@ -174,6 +223,18 @@ def base_head(title: str) -> str:
 </head>
 <body>
 """
+
+STATIC_DIR = BASE_DIR / "static"
+FALLBACK_INDEX = BASE_DIR.parent / "index.html"
+
+# ─────────────────────────────────────────
+# Routes — Homepage
+# ─────────────────────────────────────────
+@app.get("/", response_class=HTMLResponse)
+async def root_page(request: Request):
+    log_scan("homepage", request)
+    index_path = STATIC_DIR / "index.html" if (STATIC_DIR / "index.html").exists() else FALLBACK_INDEX
+    return FileResponse(str(index_path))
 
 # ─────────────────────────────────────────
 # Routes — Tracking redirects
@@ -193,7 +254,8 @@ async def rollup_banner_scan(request: Request):
 # ─────────────────────────────────────────
 @app.get("/card/{slug}", response_class=HTMLResponse)
 async def card_page(slug: str, request: Request):
-    log_scan(f"card/{slug.lower()}", request)
+    slug = validate_slug(slug)
+    log_scan(f"card/{slug}", request)
 
     db = get_db()
     member = db.execute(
@@ -205,52 +267,66 @@ async def card_page(slug: str, request: Request):
         raise HTTPException(status_code=404, detail="Not found")
 
     m = dict(member)
-    name   = m["full_name"]
-    role   = m["role"] or ""
-    phone  = m["phone"]
-    email  = m["email"]
-    linkedin = m["linkedin"]
+    name_raw = m["full_name"]
+    role_raw = m["role"] or ""
+    phone_raw = m["phone"]
+    email_raw = m["email"]
+    linkedin_raw = m["linkedin"]
     slug_l = m["slug"]
+
+    esc = html_mod.escape
+    name = esc(name_raw)
+    role = esc(role_raw)
+    phone = esc(phone_raw) if phone_raw else ""
+    email = esc(email_raw) if email_raw else ""
+    linkedin = esc(linkedin_raw) if linkedin_raw else ""
+    slug_esc = esc(slug_l)
 
     # Photo
     photo_ext = m.get("photo_ext")
     if photo_ext and (PHOTOS_DIR / f"{slug_l}.{photo_ext}").exists():
-        photo_html = f'<img src="/api/card-photo/{slug_l}" alt="{name}" class="avatar"/>'
+        photo_html = f'<img src="/api/card-photo/{slug_esc}" alt="{name}" class="avatar"/>'
     else:
-        initials = "".join(w[0].upper() for w in name.split()[:2])
+        initials = esc("".join(w[0].upper() for w in name_raw.split()[:2]))
         photo_html = f'<div class="avatar-initials">{initials}</div>'
 
     # Buttons
     btns = []
-    if phone:
-        wa_num = "234" + phone.lstrip("0")
+    if phone_raw:
+        wa_num = "234" + phone_raw.lstrip("0")
         btns.append(f"""
-        <a class="btn primary" href="https://wa.me/{wa_num}" target="_blank" rel="noopener">
+        <a class="btn primary" href="https://wa.me/{esc(wa_num)}" target="_blank" rel="noopener">
           {icon_wa()} Chat on WhatsApp
         </a>""")
         btns.append(f"""
         <a class="btn" href="tel:{phone}">
           {icon_phone()} Call
         </a>""")
-    if email:
+    if email_raw:
         btns.append(f"""
         <a class="btn" href="mailto:{email}">
           {icon_email()} Email
         </a>""")
-    if linkedin:
+    if linkedin_raw:
         btns.append(f"""
         <a class="btn" href="{linkedin}" target="_blank" rel="noopener">
           {icon_linkedin()} LinkedIn
         </a>""")
 
     btns.append(f"""
-    <a class="btn outline" href="/card/{slug_l}/vcard" download="{name.replace(' ','_')}.vcf">
+    <a class="btn outline" href="/card/{slug_esc}/vcard" download="{esc(name_raw.replace(' ','_'))}.vcf">
       {icon_contact()} Save Contact
     </a>""")
 
     btns_html = "\n".join(btns)
 
-    return base_head(f"{name} — Feest") + f"""
+    og_image = f"https://link.usefeest.com/api/card-photo/{slug_esc}" if photo_ext else "https://link.usefeest.com/logo.png"
+    return base_head(
+        f"{name} — Feest",
+        og_title=name_raw,
+        og_description=f"{role_raw} at Feest",
+        og_image=og_image,
+    ) + f"""
 <style>
   .card{{width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:0}}
   .avatar,.avatar-initials{{width:108px;height:108px;border-radius:50%;object-fit:cover;border:3px solid var(--primary);box-shadow:var(--shadow);margin-bottom:16px}}
@@ -288,12 +364,13 @@ async def card_page(slug: str, request: Request):
 # ─────────────────────────────────────────
 @app.get("/api/card-photo/{slug}")
 async def card_photo(slug: str):
+    slug = validate_slug(slug)
     db = get_db()
-    row = db.execute("SELECT photo_ext FROM members WHERE slug=?", (slug.lower(),)).fetchone()
+    row = db.execute("SELECT photo_ext FROM members WHERE slug=?", (slug,)).fetchone()
     db.close()
     if not row or not row["photo_ext"]:
         raise HTTPException(status_code=404)
-    path = PHOTOS_DIR / f"{slug.lower()}.{row['photo_ext']}"
+    path = PHOTOS_DIR / f"{slug}.{row['photo_ext']}"
     if not path.exists():
         raise HTTPException(status_code=404)
     return FileResponse(str(path))
@@ -303,8 +380,9 @@ async def card_photo(slug: str):
 # ─────────────────────────────────────────
 @app.get("/card/{slug}/vcard")
 async def vcard(slug: str):
+    slug = validate_slug(slug)
     db = get_db()
-    m = db.execute("SELECT * FROM members WHERE lower(slug)=?", (slug.lower(),)).fetchone()
+    m = db.execute("SELECT * FROM members WHERE lower(slug)=?", (slug,)).fetchone()
     db.close()
     if not m:
         raise HTTPException(status_code=404)
@@ -334,10 +412,11 @@ async def vcard(slug: str):
 # ─────────────────────────────────────────
 # Routes — Admin login
 # ─────────────────────────────────────────
-@app.get("/xadmin/login", response_class=HTMLResponse)
+@app.get("/xadmin/login")
 async def login_page(error: str = ""):
-    err_html = f'<p class="err">{error}</p>' if error else ""
-    return f"""<!DOCTYPE html>
+    err_html = f'<p class="err">{html_mod.escape(error)}</p>' if error else ""
+    csrf_token = secrets.token_urlsafe(32)
+    body = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -363,6 +442,7 @@ async def login_page(error: str = ""):
   <p class="sub">Feest Links Dashboard</p>
   {err_html}
   <form method="POST" action="/xadmin/login">
+    <input type="hidden" name="csrf_token" value="{csrf_token}"/>
     <label>Username</label>
     <input name="username" type="text" autocomplete="username" required/>
     <label>Password</label>
@@ -371,10 +451,29 @@ async def login_page(error: str = ""):
   </form>
 </div>
 </body></html>"""
+    resp = HTMLResponse(content=body)
+    resp.set_cookie(
+        "csrf_token", csrf_token,
+        httponly=True, samesite="strict", secure=True, max_age=600,
+    )
+    return resp
 
 @app.post("/xadmin/login")
-async def login(username: str = Form(...), password: str = Form(...)):
+async def login(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    csrf_token: str = Form(""),
+    csrf_cookie: str = Cookie(default="", alias="csrf_token"),
+):
+    if not csrf_token or not csrf_cookie or csrf_token != csrf_cookie:
+        return RedirectResponse(url="/xadmin/login?error=Invalid+request", status_code=302)
+
+    ip = _client_ip(request)
+    _check_rate_limit(ip)
+
     if username == ADMIN_USER and password == ADMIN_PASS:
+        _clear_login_attempts(ip)
         db = get_db()
         token = create_session(db)
         db.close()
@@ -384,7 +483,10 @@ async def login(username: str = Form(...), password: str = Form(...)):
             httponly=True, samesite="lax", secure=True,
             max_age=SESSION_TTL_HOURS * 3600
         )
+        resp.delete_cookie("csrf_token")
         return resp
+
+    _record_failed_login(ip)
     return RedirectResponse(url="/xadmin/login?error=Invalid+credentials", status_code=302)
 
 @app.get("/xadmin/logout")
@@ -435,15 +537,17 @@ async def admin_dashboard(_=Depends(require_admin)):
 
     total_all = sum(r["total"] for r in route_rows)
 
+    esc = html_mod.escape
+
     # Build route table rows
     route_html = ""
     for r in route_rows:
-        label = _route_label(r["route"])
+        label = esc(_route_label(r["route"]))
         pct = round(r["total"] / total_all * 100) if total_all else 0
-        last = r["last_scan"][:16].replace("T", " ") if r["last_scan"] else "—"
+        last = esc(r["last_scan"][:16].replace("T", " ")) if r["last_scan"] else "—"
         route_html += f"""
         <tr>
-          <td><span class="badge">{r['route']}</span></td>
+          <td><span class="badge">{esc(r['route'])}</span></td>
           <td>{label}</td>
           <td><strong>{r['total']}</strong></td>
           <td>
@@ -460,12 +564,12 @@ async def admin_dashboard(_=Depends(require_admin)):
     recent_html = ""
     for r in recent:
         ua_short = r["user_agent"][:48] + "…" if r["user_agent"] and len(r["user_agent"]) > 48 else (r["user_agent"] or "—")
-        ts = r["scanned_at"][:16].replace("T", " ")
+        ts = esc(r["scanned_at"][:16].replace("T", " "))
         recent_html += f"""
         <tr>
-          <td><span class="badge">{r['route']}</span></td>
-          <td class="muted">{r['ip'] or '—'}</td>
-          <td class="muted small">{ua_short}</td>
+          <td><span class="badge">{esc(r['route'])}</span></td>
+          <td class="muted">{esc(r['ip'] or '—')}</td>
+          <td class="muted small">{esc(ua_short)}</td>
           <td class="muted">{ts}</td>
         </tr>"""
 

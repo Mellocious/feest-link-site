@@ -16,6 +16,12 @@ link.usefeest.com {
         reverse_proxy api:8000
     }
 
+    # Homepage → API (for visit tracking)
+    @root path /
+    handle @root {
+        reverse_proxy api:8000
+    }
+
     # Static files (main links page)
     handle {
         root * /srv/link
