@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feest – Links</title>
+  <meta name="description" content="The Digital OS for Food Vendors. Connect with Feest on all platforms." />
+  <meta property="og:title" content="Feest – Links" />
+  <meta property="og:description" content="The Digital OS for Food Vendors." />
+  <meta property="og:image" content="/logo.png" />
+  <link rel="icon" href="/logo.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --primary:      #F7715B;
+      --primary-dark: #e55a44;
+      --bg:           #FFF6E8;
+      --surface:      #FFFFFF;
+      --text:         #2F2F2F;
+      --text-muted:   #9E9E9E;
+      --border:       rgba(247, 113, 91, 0.18);
+      --shadow:       0 4px 24px rgba(247, 113, 91, 0.10);
+      --shadow-hover: 0 8px 32px rgba(247, 113, 91, 0.22);
+      --radius:       16px;
+    }
+
+    html { height: 100%; }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 20px 64px;
+    }
+
+    /* ── Card ── */
+    .card {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .logo-wrap {
+      width: 88px;
+      height: 88px;
+      background: var(--surface);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow);
+      padding: 12px;
+      border: 1.5px solid var(--border);
+    }
+
+    .logo-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .brand-name {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+
+    .brand-name span { color: var(--primary); }
+
+    .tagline {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-top: -4px;
+    }
+
+    /* ── Section label ── */
+    .section-label {
+      width: 100%;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      padding-left: 4px;
+    }
+
+    /* ── Link buttons ── */
+    .links-group {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .link-btn {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+      padding: 16px 20px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      text-decoration: none;
+      color: var(--text);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      box-shadow: var(--shadow);
+      transition: transform 0.18s ease, box-shadow 0.18s ease,
+                  border-color 0.18s ease, background 0.18s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .link-btn:hover,
+    .link-btn:focus-visible {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+      border-color: var(--primary);
+      background: #fff;
+      outline: none;
+    }
+
+    .link-btn:active {
+      transform: scale(0.98);
+      box-shadow: var(--shadow);
+    }
+
+    /* Primary (WhatsApp) */
+    .link-btn.primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .link-btn.primary:hover,
+    .link-btn.primary:focus-visible {
+      background: var(--primary-dark);
+      border-color: var(--primary-dark);
+    }
+
+    /* Icon pill */
+    .icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .link-btn.primary .icon  { background: rgba(255,255,255,0.20); }
+    .link-btn:not(.primary) .icon { background: var(--bg); }
+
+    .icon svg { width: 20px; height: 20px; }
+
+    /* Arrow */
+    .arrow {
+      margin-left: auto;
+      flex-shrink: 0;
+      opacity: 0.3;
+      transition: opacity 0.18s, transform 0.18s;
+    }
+
+    .link-btn:hover .arrow,
+    .link-btn:focus-visible .arrow { opacity: 0.7; transform: translateX(3px); }
+    .link-btn.primary .arrow       { opacity: 0.55; }
+
+    /* ── Divider ── */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: var(--border);
+      margin: 0 0 24px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 8px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    footer a { color: var(--primary); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 380px) {
+      body { padding: 32px 16px 48px; }
+      .brand-name { font-size: 22px; }
+      .link-btn { font-size: 14px; padding: 14px 16px; }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <!-- ── Header ── -->
+  <header class="header">
+    <div class="logo-wrap">
+      <img src="/logo.png" alt="Feest" />
+    </div>
+    <div>
+      <h1 class="brand-name">Feest<span>.</span></h1>
+      <p class="tagline">The Digital OS for Food Vendors</p>
+    </div>
+  </header>
+
+  <!-- ── Primary CTA ── -->
+  <div class="links-group" style="margin-bottom: 20px;">
+    <a class="link-btn primary" href="https://wa.me/2349060002514" target="_blank" rel="noopener noreferrer">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+          <path d="M12 0C5.373 0 0 5.373 0 12c0 2.104.547 4.08 1.504 5.797L.057 23.886a.5.5 0 00.619.61l6.241-1.637A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.944 9.944 0 01-5.088-1.393l-.365-.218-3.782.992.992-3.688-.236-.382A9.944 9.944 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+        </svg>
+      </span>
+      <span class="label">Chat us on WhatsApp</span>
+      <span class="arrow">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </span>
+    </a>
+  </div>
+
+  <div class="divider"></div>
+  <p class="section-label">Explore Feest</p>
+
+  <div class="links-group">
+    <!-- Website -->
+    <a class="link-btn" href="https://www.usefeest.com" target="_blank" rel="noopener noreferrer">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#F7715B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </span>
+      <span class="label">Visit our Website</span>
+      <span class="arrow">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </span>
+    </a>
+
+    <!-- Blog -->
+    <a class="link-btn" href="https://www.usefeest.com/blog" target="_blank" rel="noopener noreferrer">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#F7715B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+      </span>
+      <span class="label">Read our Blog</span>
+      <span class="arrow">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </span>
+    </a>
+  </div>
+
+  <div class="divider"></div>
+  <p class="section-label">Follow us</p>
+
+  <div class="links-group">
+    <!-- Instagram -->
+    <a class="link-btn" href="https://www.instagram.com/usefeest" target="_blank" rel="noopener noreferrer">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#F7715B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+        </svg>
+      </span>
+      <span class="label">Instagram</span>
+      <span class="arrow">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </span>
+    </a>
+
+    <!-- X / Twitter -->
+    <a class="link-btn" href="https://x.com/usefeest" target="_blank" rel="noopener noreferrer">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="#F7715B">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.259 5.63 5.905-5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+        </svg>
+      </span>
+      <span class="label">X (Twitter)</span>
+      <span class="arrow">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </span>
+    </a>
+
+    <!-- LinkedIn -->
+    <a class="link-btn" href="https://www.linkedin.com/company/usefeest" target="_blank" rel="noopener noreferrer">
+      <span class="icon">
+        <svg viewBox="0 0 24 24" fill="#F7715B">
+          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+        </svg>
+      </span>
+      <span class="label">LinkedIn</span>
+      <span class="arrow">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </span>
+    </a>
+  </div>
+
+  <footer>
+    <p>© 2026 Feest · <a href="https://www.usefeest.com">usefeest.com</a></p>
+  </footer>
+
+</div>
+</body>
+</html>
