@@ -168,7 +168,7 @@ def base_head(title: str) -> str:
   <style>
     *,*::before,*::after{{box-sizing:border-box;margin:0;padding:0}}
     {COLORS}
-    body{{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:48px 20px 64px}}
+    body{{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:48px 20px 40px}}
     a{{text-decoration:none}}
   </style>
 </head>
@@ -235,7 +235,7 @@ async def card_page(slug: str, request: Request):
     if email:
         btns.append(f"""
         <a class="btn" href="mailto:{email}">
-          {icon_email()} {email}
+          {icon_email()} Email
         </a>""")
     if linkedin:
         btns.append(f"""
@@ -263,7 +263,7 @@ async def card_page(slug: str, request: Request):
   .btn:active{{transform:scale(.98)}}
   .btn.primary{{background:var(--primary);border-color:var(--primary);color:#fff}}
   .btn.primary:hover{{background:var(--primary-dark);border-color:var(--primary-dark)}}
-  .btn.outline{{background:transparent;border:1.5px solid var(--primary);color:var(--primary)}}
+  .btn.outline{{background:transparent;border:1.5px solid var(--primary);color:var(--primary);box-shadow:var(--shadow)}}
   .btn.outline:hover{{background:rgba(247,113,91,.06)}}
   .btn svg{{width:20px;height:20px;flex-shrink:0}}
   .feest-link{{margin-top:8px;font-size:12px;color:var(--muted);font-weight:500}}
