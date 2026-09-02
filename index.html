@@ -16,305 +16,171 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --primary:      #F7715B;
-      --primary-dark: #e55a44;
-      --bg:           #FFF6E8;
-      --surface:      #FFFFFF;
-      --text:         #2F2F2F;
-      --muted:        #A8A8A8;
-      --border:       rgba(247,113,91,0.14);
-      --shadow:       0 2px 16px rgba(47,47,47,0.07);
-      --shadow-up:    0 8px 32px rgba(247,113,91,0.16);
-      --r:            14px;
+      --coral:   #F7715B;
+      --dark:    #1A1A1A;
+      --bg:      #FAFAFA;
+      --muted:   #9E9E9E;
     }
-
-    html { height: 100%; }
 
     body {
       font-family: 'Montserrat', sans-serif;
-      background-color: var(--bg);
-      /* subtle warm coral glow at the very top */
-      background-image: radial-gradient(ellipse 130% 38% at 50% -8%,
-        rgba(247,113,91,0.13) 0%, transparent 65%);
-      color: var(--text);
-      min-height: 100%;
+      background: var(--bg);
+      color: var(--dark);
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 52px 20px 64px;
+      padding: 56px 24px 64px;
     }
 
     .wrap {
       width: 100%;
-      max-width: 440px;
+      max-width: 420px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
-    /* ── Brand header ── */
-    .brand {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 44px;
-      animation: fadeUp 0.5s ease both;
-    }
-
-    .logo {
-      width: 100px;
-      height: 100px;
-      object-fit: contain;
-      mix-blend-mode: multiply;
-      filter: drop-shadow(0 4px 16px rgba(247,113,91,0.22));
-    }
-
-    .tagline {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      background: rgba(247,113,91,0.09);
-      border: 1px solid rgba(247,113,91,0.22);
-      border-radius: 100px;
-      padding: 5px 14px 5px 10px;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--primary);
-      letter-spacing: 0.1px;
-    }
-
-    .tagline-dot {
-      width: 6px;
-      height: 6px;
-      background: var(--primary);
+    /* ── Avatar ── */
+    .avatar {
+      width: 96px;
+      height: 96px;
       border-radius: 50%;
-      flex-shrink: 0;
-      /* subtle pulse */
-      animation: pulse 2.4s ease infinite;
-    }
-
-    /* ── Section label ── */
-    .section-label {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 12px;
-    }
-
-    .section-label::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-    }
-
-    /* ── Links group ── */
-    .links-group {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 28px;
-    }
-
-    /* ── Link button ── */
-    .link-btn {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      width: 100%;
-      padding: 14px 16px;
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      border-radius: var(--r);
-      text-decoration: none;
-      color: var(--text);
-      font-family: 'Montserrat', sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      box-shadow: var(--shadow);
-      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
-      -webkit-tap-highlight-color: transparent;
-      animation: fadeUp 0.4s ease both;
-    }
-
-    /* staggered entrance */
-    .links-group:first-of-type .link-btn:nth-child(1) { animation-delay: 0.10s; }
-    .links-group:first-of-type .link-btn:nth-child(2) { animation-delay: 0.16s; }
-    .links-group:last-of-type  .link-btn:nth-child(1) { animation-delay: 0.22s; }
-    .links-group:last-of-type  .link-btn:nth-child(2) { animation-delay: 0.28s; }
-    .links-group:last-of-type  .link-btn:nth-child(3) { animation-delay: 0.34s; }
-
-    .link-btn:hover,
-    .link-btn:focus-visible {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-up);
-      border-color: rgba(247,113,91,0.38);
-      outline: none;
-    }
-
-    .link-btn:active { transform: scale(0.975); box-shadow: var(--shadow); }
-
-    /* Icon container */
-    .btn-icon {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
-      background: rgba(247,113,91,0.08);
+      overflow: hidden;
+      background: #fff;
+      margin-bottom: 16px;
+      /* keep logo inside a circle with a subtle warm ring */
+      box-shadow: 0 0 0 3px #fff, 0 0 0 4.5px rgba(247,113,91,0.35);
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-shrink: 0;
-      transition: background 0.16s;
+      animation: fadeUp .45s ease both;
     }
 
-    .link-btn:hover .btn-icon { background: rgba(247,113,91,0.15); }
-    .btn-icon svg { width: 18px; height: 18px; }
+    .avatar img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      mix-blend-mode: multiply;
+    }
 
-    .btn-label { flex: 1; }
+    /* ── Name & bio ── */
+    .name {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--dark);
+      letter-spacing: -0.3px;
+      animation: fadeUp .45s .06s ease both;
+    }
 
-    /* Arrow */
-    .btn-arrow {
-      flex-shrink: 0;
+    .bio {
+      font-size: 13px;
+      font-weight: 500;
       color: var(--muted);
-      transition: color 0.16s, transform 0.16s;
+      margin-top: 6px;
+      margin-bottom: 36px;
+      animation: fadeUp .45s .10s ease both;
     }
 
-    .link-btn:hover .btn-arrow {
-      color: var(--primary);
-      transform: translateX(3px);
+    /* ── Buttons ── */
+    .links {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 56px;
+      border-radius: 100px;
+      text-decoration: none;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.1px;
+      transition: transform .14s ease, filter .14s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    /* Filled coral — primary */
+    .btn.filled {
+      background: var(--coral);
+      color: #fff;
+    }
+    .btn.filled:hover { filter: brightness(1.06); }
+
+    /* Outline — secondary */
+    .btn.outline {
+      background: transparent;
+      border: 2px solid var(--dark);
+      color: var(--dark);
+    }
+    .btn.outline:hover { background: rgba(0,0,0,0.04); }
+
+    /* Stagger entrance */
+    .btn:nth-child(1) { animation: fadeUp .4s .14s ease both; }
+    .btn:nth-child(2) { animation: fadeUp .4s .19s ease both; }
+    .btn:nth-child(3) { animation: fadeUp .4s .24s ease both; }
+    .btn:nth-child(4) { animation: fadeUp .4s .29s ease both; }
+    .btn:nth-child(5) { animation: fadeUp .4s .34s ease both; }
+
+    /* ── Divider ── */
+    .divider {
+      width: 40px;
+      height: 1px;
+      background: rgba(0,0,0,0.1);
+      margin: 28px 0;
     }
 
     /* ── Footer ── */
     footer {
-      margin-top: 12px;
-      text-align: center;
       font-size: 11px;
       color: var(--muted);
       font-weight: 500;
-      animation: fadeUp 0.4s 0.40s ease both;
+      text-align: center;
+      animation: fadeUp .4s .40s ease both;
     }
 
-    footer a { color: var(--primary); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
+    footer a { color: var(--coral); text-decoration: none; }
 
-    /* ── Animations ── */
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(12px); }
+      from { opacity: 0; transform: translateY(10px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: 0.5; transform: scale(0.75); }
-    }
-
     @media (max-width: 380px) {
-      body { padding: 40px 16px 48px; }
-      .link-btn { font-size: 13px; padding: 13px 14px; }
-      .logo { width: 88px; height: 88px; }
+      body { padding: 44px 20px 56px; }
+      .btn { height: 52px; font-size: 14px; }
     }
   </style>
 </head>
 <body>
 <div class="wrap">
 
-  <!-- Brand -->
-  <div class="brand">
-    <img class="logo" src="/logo.png" alt="Feest" />
-    <span class="tagline">
-      <span class="tagline-dot"></span>
-      The Digital OS for Food Vendors
-    </span>
+  <div class="avatar">
+    <img src="/logo.png" alt="Feest" />
   </div>
 
-  <!-- Explore -->
-  <p class="section-label">Explore</p>
-  <div class="links-group">
+  <p class="name">Feest</p>
+  <p class="bio">The Digital OS for Food Vendors</p>
 
-    <a class="link-btn" href="https://usefeest.com" target="_blank" rel="noopener noreferrer">
-      <span class="btn-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#F7715B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="2" y1="12" x2="22" y2="12"/>
-          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-        </svg>
-      </span>
-      <span class="btn-label">Visit our Website</span>
-      <svg class="btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M5 12h14M12 5l7 7-7 7"/>
-      </svg>
-    </a>
-
-    <a class="link-btn" href="https://usefeest.com/blog" target="_blank" rel="noopener noreferrer">
-      <span class="btn-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#F7715B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-        </svg>
-      </span>
-      <span class="btn-label">Read our Blog</span>
-      <svg class="btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M5 12h14M12 5l7 7-7 7"/>
-      </svg>
-    </a>
-
+  <div class="links">
+    <a class="btn filled" href="https://usefeest.com" target="_blank" rel="noopener noreferrer">Visit our Website</a>
+    <a class="btn filled" href="https://usefeest.com/blog" target="_blank" rel="noopener noreferrer">Read our Blog</a>
+    <a class="btn outline" href="https://instagram.com/usefeest" target="_blank" rel="noopener noreferrer">Instagram</a>
+    <a class="btn outline" href="https://x.com/usefeest" target="_blank" rel="noopener noreferrer">X (Twitter)</a>
+    <a class="btn outline" href="https://linkedin.com/company/usefeest" target="_blank" rel="noopener noreferrer">LinkedIn</a>
   </div>
 
-  <!-- Follow -->
-  <p class="section-label">Follow us</p>
-  <div class="links-group">
+  <div class="divider"></div>
 
-    <a class="link-btn" href="https://instagram.com/usefeest" target="_blank" rel="noopener noreferrer">
-      <span class="btn-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#F7715B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-        </svg>
-      </span>
-      <span class="btn-label">Instagram</span>
-      <svg class="btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M5 12h14M12 5l7 7-7 7"/>
-      </svg>
-    </a>
-
-    <a class="link-btn" href="https://x.com/usefeest" target="_blank" rel="noopener noreferrer">
-      <span class="btn-icon">
-        <svg viewBox="0 0 24 24" fill="#F7715B">
-          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.259 5.63 5.905-5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-        </svg>
-      </span>
-      <span class="btn-label">X (Twitter)</span>
-      <svg class="btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M5 12h14M12 5l7 7-7 7"/>
-      </svg>
-    </a>
-
-    <a class="link-btn" href="https://linkedin.com/company/usefeest" target="_blank" rel="noopener noreferrer">
-      <span class="btn-icon">
-        <svg viewBox="0 0 24 24" fill="#F7715B">
-          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-        </svg>
-      </span>
-      <span class="btn-label">LinkedIn</span>
-      <svg class="btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M5 12h14M12 5l7 7-7 7"/>
-      </svg>
-    </a>
-
-  </div>
-
-  <footer>
-    <p>© 2026 Feest · <a href="https://usefeest.com">usefeest.com</a></p>
-  </footer>
+  <footer>© 2026 Feest · <a href="https://usefeest.com">usefeest.com</a></footer>
 
 </div>
 </body>
