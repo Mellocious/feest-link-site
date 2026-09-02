@@ -645,16 +645,9 @@ async def admin_dashboard(_=Depends(require_admin)):
     }}
 
     .header-logo {{
-      width: 28px;
       height: 28px;
-      border-radius: 8px;
-      background: var(--coral);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      font-weight: 800;
-      color: #fff;
+      width: auto;
+      display: block;
     }}
 
     .header-title {{
@@ -775,6 +768,11 @@ async def admin_dashboard(_=Depends(require_admin)):
     }}
 
     /* ── Tables ── */
+    .table-scroll {{
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }}
+
     table {{
       width: 100%;
       border-collapse: collapse;
@@ -884,8 +882,7 @@ async def admin_dashboard(_=Depends(require_admin)):
 
 <header>
   <div class="header-brand">
-    <div class="header-logo">F</div>
-    <span class="header-title">Feest <span>Links</span></span>
+    <img src="/logo.png" alt="Feest" class="header-logo"/>
   </div>
   <a class="signout" href="/xadmin/logout">Sign out</a>
 </header>
@@ -947,7 +944,7 @@ async def admin_dashboard(_=Depends(require_admin)):
       <span class="panel-title">Scans by Route</span>
       <span class="panel-meta">{len(route_rows)} route{"s" if len(route_rows) != 1 else ""}</span>
     </div>
-    {"<table><thead><tr><th>Route</th><th>Label</th><th>Total</th><th>Share</th><th>Last Scan</th></tr></thead><tbody>" + route_html + "</tbody></table>" if route_rows else '<div class="empty">No scans recorded yet.</div>'}
+    {"<div class='table-scroll'><table><thead><tr><th>Route</th><th>Label</th><th>Total</th><th>Share</th><th>Last Scan</th></tr></thead><tbody>" + route_html + "</tbody></table></div>" if route_rows else '<div class="empty">No scans recorded yet.</div>'}
   </div>
 
   <!-- Recent scans -->
@@ -956,7 +953,7 @@ async def admin_dashboard(_=Depends(require_admin)):
       <span class="panel-title">Recent Scans</span>
       <span class="panel-meta">Last 30</span>
     </div>
-    {"<table><thead><tr><th>Route</th><th>IP</th><th>Device</th><th>Time (UTC)</th></tr></thead><tbody>" + recent_html + "</tbody></table>" if recent else '<div class="empty">No scans recorded yet.</div>'}
+    {"<div class='table-scroll'><table><thead><tr><th>Route</th><th>IP</th><th>Device</th><th>Time (UTC)</th></tr></thead><tbody>" + recent_html + "</tbody></table></div>" if recent else '<div class="empty">No scans recorded yet.</div>'}
   </div>
 
 </div>
