@@ -509,8 +509,11 @@ async def logout(response: Response, session: str = Cookie(default=None)):
 # Routes — Admin dashboard
 # ─────────────────────────────────────────
 @app.get("/xadmin", response_class=HTMLResponse)
-async def admin_dashboard(_=Depends(require_admin)):
+async def admin_dashboard(request: Request, page: int = 1, _=Depends(require_admin)):
     db = get_db()
+    PAGE_SIZE = 25
+    page = max(1, page)
+    offset = (page - 1) * PAGE_SIZE
 
     route_rows = db.execute("""
         SELECT route, COUNT(*) as total,
@@ -528,12 +531,15 @@ async def admin_dashboard(_=Depends(require_admin)):
         ORDER BY day
     """).fetchall()
 
+    total_recent = db.execute("SELECT COUNT(*) FROM scans").fetchone()[0]
+    total_pages  = max(1, -(-total_recent // PAGE_SIZE))  # ceiling div
+
     recent = db.execute("""
         SELECT route, ip, user_agent, scanned_at
         FROM scans
         ORDER BY scanned_at DESC
-        LIMIT 30
-    """).fetchall()
+        LIMIT ? OFFSET ?
+    """, (PAGE_SIZE, offset)).fetchall()
 
     db.close()
 
@@ -548,6 +554,46 @@ async def admin_dashboard(_=Depends(require_admin)):
         d = (datetime.utcnow() - timedelta(days=i)).strftime("%Y-%m-%d")
         chart_labels.append(d)
         chart_counts.append(day_map.get(d, 0))
+
+    # Pagination controls for Recent Scans
+    start_row  = offset + 1 if total_recent > 0 else 0
+    end_row    = min(offset + PAGE_SIZE, total_recent)
+    pg_info    = f"Showing {start_row}–{end_row} of {total_recent}"
+
+    def pg_link(p):
+        return f"/xadmin?page={p}"
+
+    # Prev / Next
+    prev_cls = "pg-btn" if page > 1 else "pg-btn disabled"
+    next_cls = "pg-btn" if page < total_pages else "pg-btn disabled"
+    prev_btn = f'<a class="{prev_cls}" href="{pg_link(page-1)}">&#8592; Prev</a>'
+    next_btn = f'<a class="{next_cls}" href="{pg_link(page+1)}">Next &#8594;</a>'
+
+    # Page number buttons — show at most 5 around current page
+    pg_btns = ""
+    window_start = max(1, min(page - 2, total_pages - 4))
+    window_end   = min(total_pages, window_start + 4)
+    if window_start > 1:
+        pg_btns += f'<a class="pg-btn" href="{pg_link(1)}">1</a>'
+        if window_start > 2:
+            pg_btns += '<span class="pg-btn disabled" style="border:none;padding:0 4px">…</span>'
+    for p in range(window_start, window_end + 1):
+        cls = "pg-btn active" if p == page else "pg-btn"
+        pg_btns += f'<a class="{cls}" href="{pg_link(p)}">{p}</a>'
+    if window_end < total_pages:
+        if window_end < total_pages - 1:
+            pg_btns += '<span class="pg-btn disabled" style="border:none;padding:0 4px">…</span>'
+        pg_btns += f'<a class="pg-btn" href="{pg_link(total_pages)}">{total_pages}</a>'
+
+    pagination_html = f"""
+    <div class="pagination">
+      <span class="pagination-info">{pg_info}</span>
+      <div class="pagination-btns">
+        {prev_btn}
+        {pg_btns}
+        {next_btn}
+      </div>
+    </div>"""
 
     esc = html_mod.escape
 
@@ -874,6 +920,48 @@ async def admin_dashboard(_=Depends(require_admin)):
       font-size: 13px;
     }}
 
+    /* ── Pagination ── */
+    .pagination {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+    }}
+
+    .pagination-info {{
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+    }}
+
+    .pagination-btns {{
+      display: flex;
+      gap: 8px;
+    }}
+
+    .pg-btn {{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 32px;
+      min-width: 32px;
+      padding: 0 12px;
+      border-radius: 8px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: var(--surface);
+      transition: background .12s, border-color .12s;
+    }}
+
+    .pg-btn:hover {{ background: #F4F4F5; border-color: #D4D4D8; }}
+    .pg-btn.active {{ background: var(--coral); color: #fff; border-color: var(--coral); }}
+    .pg-btn.disabled {{ opacity: 0.35; pointer-events: none; }}
+
     @media (max-width: 640px) {{
       .main {{ padding: 20px 16px 48px; }}
       header {{ padding: 0 16px; }}
@@ -956,9 +1044,9 @@ async def admin_dashboard(_=Depends(require_admin)):
   <div class="panel">
     <div class="panel-header">
       <span class="panel-title">Recent Scans</span>
-      <span class="panel-meta">Last 30</span>
+      <span class="panel-meta">Page {page} of {total_pages}</span>
     </div>
-    {"<div class='table-scroll'><table><thead><tr><th>Route</th><th>IP</th><th>Device</th><th>Time (UTC)</th></tr></thead><tbody>" + recent_html + "</tbody></table></div>" if recent else '<div class="empty">No scans recorded yet.</div>'}
+    {("<div class='table-scroll'><table><thead><tr><th>Route</th><th>IP</th><th>Device</th><th>Time (UTC)</th></tr></thead><tbody>" + recent_html + "</tbody></table></div>" + pagination_html) if recent else '<div class="empty">No scans recorded yet.</div>'}
   </div>
 
 </div>
