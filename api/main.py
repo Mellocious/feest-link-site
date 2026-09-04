@@ -644,33 +644,47 @@ async def login_page(error: str = ""):
   <style>
     *{{box-sizing:border-box;margin:0;padding:0}}
     html,body{{height:100%}}
-    body{{font-family:'Montserrat',sans-serif;background:#1C1C1E;min-height:100svh;display:flex;align-items:center;justify-content:center;padding:24px}}
-    .box{{background:#fff;border-radius:16px;padding:36px 32px 32px;width:100%;max-width:340px;box-shadow:0 8px 40px rgba(0,0,0,.45)}}
-    .logo-wrap{{display:flex;justify-content:center;margin-bottom:24px}}
-    .logo-wrap img{{height:28px;width:auto}}
-    label{{display:block;font-size:11px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#999;margin-bottom:6px}}
-    input{{width:100%;padding:12px 14px;border:1.5px solid #E4E4E7;border-radius:10px;font-family:'Montserrat',sans-serif;font-size:14px;outline:none;transition:border-color .18s;margin-bottom:16px;color:#111}}
-    input:focus{{border-color:#F7715B}}
-    button{{width:100%;padding:14px;background:#F7715B;color:#fff;border:none;border-radius:10px;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background .18s;margin-top:4px}}
+    body{{font-family:'Montserrat',sans-serif;background:#F4F4F5;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:20px}}
+    .brand{{display:flex;align-items:center;gap:8px}}
+    .brand img{{height:26px;width:auto}}
+    .card{{background:#fff;border-radius:12px;border:1px solid #E4E4E7;padding:32px;width:100%;max-width:360px}}
+    .card-header{{margin-bottom:24px}}
+    .card-title{{font-size:18px;font-weight:700;color:#09090B;margin-bottom:4px}}
+    .card-desc{{font-size:13px;color:#71717A}}
+    .field{{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}}
+    label{{font-size:13px;font-weight:600;color:#09090B}}
+    input{{width:100%;padding:9px 12px;border:1px solid #E4E4E7;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s;color:#09090B;background:#fff}}
+    input:focus{{border-color:#F7715B;box-shadow:0 0 0 3px rgba(247,113,91,.12)}}
+    button{{width:100%;padding:10px;background:#F7715B;color:#fff;border:none;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;margin-top:4px}}
     button:hover{{background:#e55a44}}
-    .err{{color:#e55a44;font-size:12px;font-weight:600;margin-bottom:16px;text-align:center}}
+    .err{{font-size:13px;font-weight:500;color:#DC2626;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:9px 12px;margin-bottom:16px}}
+    .footer{{font-size:12px;color:#A1A1AA;text-align:center}}
   </style>
 </head>
 <body>
-<div class="box">
-  <div class="logo-wrap">
+  <div class="brand">
     <img src="/logo.png" alt="Feest"/>
   </div>
-  {err_html}
-  <form method="POST" action="/xadmin/login">
-    <input type="hidden" name="csrf_token" value="{csrf_token}"/>
-    <label>Username</label>
-    <input name="username" type="text" autocomplete="username" required/>
-    <label>Password</label>
-    <input name="password" type="password" autocomplete="current-password" required/>
-    <button type="submit">Sign in</button>
-  </form>
-</div>
+  <div class="card">
+    <div class="card-header">
+      <p class="card-title">Welcome back</p>
+      <p class="card-desc">Sign in to the Feest admin dashboard</p>
+    </div>
+    {err_html}
+    <form method="POST" action="/xadmin/login">
+      <input type="hidden" name="csrf_token" value="{csrf_token}"/>
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" autocomplete="username" required/>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required/>
+      </div>
+      <button type="submit">Sign in</button>
+    </form>
+  </div>
+  <p class="footer">Feest · Admin</p>
 </body></html>"""
     resp = HTMLResponse(content=body)
     resp.set_cookie(
