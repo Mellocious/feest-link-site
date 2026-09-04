@@ -397,7 +397,7 @@ async def card_page(slug: str, request: Request):
 
   .name-block h1 {{
     font-size: 28px;
-    font-weight: 800;
+    font-weight: 600;
     letter-spacing: -0.5px;
     color: #1A1A1A;
     line-height: 1.2;
