@@ -643,10 +643,10 @@ async def login_page(error: str = ""):
   <link href="{FONT}" rel="stylesheet"/>
   <style>
     *{{box-sizing:border-box;margin:0;padding:0}}
-    body{{font-family:'Montserrat',sans-serif;background:#111;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}}
-    .box{{background:#fff;border-radius:16px;padding:40px 36px;width:100%;max-width:360px}}
-    .logo-wrap{{display:flex;justify-content:center;margin-bottom:32px}}
-    .logo-wrap img{{height:30px;width:auto}}
+    body{{font-family:'Montserrat',sans-serif;background:#1C1C1E;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}}
+    .box{{background:#fff;border-radius:16px;padding:36px 32px 32px;width:100%;max-width:340px;box-shadow:0 8px 40px rgba(0,0,0,.45)}}
+    .logo-wrap{{display:flex;justify-content:center;margin-bottom:24px}}
+    .logo-wrap img{{height:28px;width:auto}}
     label{{display:block;font-size:11px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#999;margin-bottom:6px}}
     input{{width:100%;padding:12px 14px;border:1.5px solid #E4E4E7;border-radius:10px;font-family:'Montserrat',sans-serif;font-size:14px;outline:none;transition:border-color .18s;margin-bottom:16px;color:#111}}
     input:focus{{border-color:#F7715B}}
