@@ -257,11 +257,6 @@ async def card_page(slug: str, request: Request):
     slug = validate_slug(slug)
     log_scan(f"card/{slug}", request)
 
-    # Temporary workaround: all printed cards point to /card/Damilare due to
-    # a print error. Log the scan (tracked in admin) then redirect to homepage.
-    if slug.lower() == "damilare":
-        return RedirectResponse(url="https://link.usefeest.com/", status_code=302)
-
     db = get_db()
     member = db.execute(
         "SELECT * FROM members WHERE lower(slug)=?", (slug.lower(),)
