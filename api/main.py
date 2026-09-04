@@ -11,7 +11,7 @@ from time import time as _time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request, Response, HTTPException, Depends, Form, Cookie
+from fastapi import FastAPI, Request, Response, HTTPException, Depends, Form, Cookie, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -720,6 +720,248 @@ async def logout(response: Response, session: str = Cookie(default=None)):
     return resp
 
 # ─────────────────────────────────────────
+# Routes — Member management
+# ─────────────────────────────────────────
+ALLOWED_PHOTO_TYPES = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
+
+def _member_edit_page(slug: str, member: dict, saved: bool = False, error: str = "") -> str:
+    esc = html_mod.escape
+    saved_banner = '<div class="banner success">Changes saved successfully.</div>' if saved else ""
+    error_banner = f'<div class="banner error">{esc(error)}</div>' if error else ""
+    photo_html = ""
+    if member.get("photo_ext"):
+        photo_html = f'<img src="/api/card-photo/{esc(slug)}" class="current-photo" alt="Current photo"/>'
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Edit {esc(member['full_name'])} · Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="{FONT}" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{{box-sizing:border-box;margin:0;padding:0}}
+    :root{{--coral:#F7715B;--dark:#111;--bg:#F4F4F5;--surface:#fff;--border:#E4E4E7;--muted:#A1A1AA;--text:#18181B;--r:14px}}
+    body{{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}}
+    header{{background:var(--dark);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}}
+    .header-brand{{display:flex;align-items:center;gap:12px}}
+    .header-logo{{height:28px;width:auto}}
+    .back-link{{font-size:12px;font-weight:600;color:var(--muted);text-decoration:none;padding:6px 14px;border:1px solid #333;border-radius:8px;transition:color .15s,border-color .15s}}
+    .back-link:hover{{color:#fff;border-color:#666}}
+    .main{{max-width:640px;margin:0 auto;padding:32px 24px 64px;display:flex;flex-direction:column;gap:24px}}
+    .page-title{{font-size:20px;font-weight:800;letter-spacing:-.5px}}
+    .page-sub{{font-size:13px;color:var(--muted);margin-top:4px}}
+    .panel{{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);overflow:hidden}}
+    .panel-header{{padding:20px 24px 0;margin-bottom:20px}}
+    .panel-title{{font-size:14px;font-weight:700}}
+    form{{padding:0 24px 24px;display:flex;flex-direction:column;gap:16px}}
+    .field{{display:flex;flex-direction:column;gap:6px}}
+    label{{font-size:11px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--muted)}}
+    input[type=text],input[type=email],input[type=tel]{{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Montserrat',sans-serif;font-size:14px;outline:none;transition:border-color .18s;background:#fff;color:var(--text)}}
+    input:focus{{border-color:var(--coral)}}
+    .photo-section{{display:flex;flex-direction:column;gap:10px}}
+    .current-photo{{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--border)}}
+    input[type=file]{{font-family:'Montserrat',sans-serif;font-size:13px;color:var(--muted)}}
+    .photo-hint{{font-size:11px;color:var(--muted)}}
+    .btn-row{{display:flex;gap:12px;margin-top:8px}}
+    .btn-save{{padding:12px 28px;background:var(--coral);color:#fff;border:none;border-radius:10px;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background .18s}}
+    .btn-save:hover{{background:#e55a44}}
+    .btn-cancel{{padding:12px 20px;background:transparent;color:var(--muted);border:1.5px solid var(--border);border-radius:10px;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}}
+    .banner{{padding:12px 16px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:4px}}
+    .banner.success{{background:#F0FDF4;color:#16A34A;border:1px solid #BBF7D0}}
+    .banner.error{{background:#FFF1F2;color:#E11D48;border:1px solid #FECDD3}}
+    @media(max-width:640px){{.main{{padding:20px 16px 48px}};header{{padding:0 16px}}}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="header-brand">
+    <img src="/logo.png" alt="Feest" class="header-logo"/>
+  </div>
+  <a class="back-link" href="/xadmin/members">&#8592; All Members</a>
+</header>
+<div class="main">
+  <div>
+    <h1 class="page-title">Edit {esc(member['full_name'])}</h1>
+    <p class="page-sub">Updates go live immediately on their card page.</p>
+  </div>
+  {saved_banner}{error_banner}
+  <div class="panel">
+    <div class="panel-header"><p class="panel-title">Profile Details</p></div>
+    <form method="POST" enctype="multipart/form-data">
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" name="full_name" value="{esc(member['full_name'])}" required/>
+      </div>
+      <div class="field">
+        <label>Role / Job Title</label>
+        <input type="text" name="role" value="{esc(member['role'] or '')}"/>
+      </div>
+      <div class="field">
+        <label>Phone</label>
+        <input type="tel" name="phone" value="{esc(member['phone'] or '')}"/>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" name="email" value="{esc(member['email'] or '')}"/>
+      </div>
+      <div class="field">
+        <label>LinkedIn URL</label>
+        <input type="text" name="linkedin" value="{esc(member['linkedin'] or '')}"/>
+      </div>
+      <div class="field">
+        <label>Profile Photo</label>
+        <div class="photo-section">
+          {photo_html}
+          <input type="file" name="photo" accept="image/jpeg,image/png,image/webp"/>
+          <p class="photo-hint">JPG, PNG or WebP · Max 5 MB · Will be cropped to a circle on the card</p>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-save" type="submit">Save Changes</button>
+        <a class="btn-cancel" href="/xadmin/members">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+</body></html>"""
+
+@app.get("/xadmin/members", response_class=HTMLResponse)
+async def members_list(_=Depends(require_admin)):
+    db = get_db()
+    rows = db.execute("SELECT * FROM members ORDER BY full_name").fetchall()
+    db.close()
+    esc = html_mod.escape
+    cards_html = ""
+    for m in rows:
+        slug = m["slug"]
+        photo_tag = f'<img src="/api/card-photo/{esc(slug)}" class="member-avatar" alt="{esc(m["full_name"])}"/>' \
+            if m["photo_ext"] else \
+            f'<div class="member-avatar initials">{esc("".join(w[0].upper() for w in m["full_name"].split()[:2]))}</div>'
+        cards_html += f"""
+        <div class="member-card">
+          {photo_tag}
+          <div class="member-info">
+            <p class="member-name">{esc(m['full_name'])}</p>
+            <p class="member-role">{esc(m['role'] or '—')}</p>
+            <p class="member-meta">{esc(m['email'] or '—')}</p>
+          </div>
+          <a class="edit-btn" href="/xadmin/members/{esc(slug)}/edit">Edit</a>
+        </div>"""
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Members · Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="{FONT}" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{{box-sizing:border-box;margin:0;padding:0}}
+    :root{{--coral:#F7715B;--dark:#111;--bg:#F4F4F5;--surface:#fff;--border:#E4E4E7;--muted:#A1A1AA;--text:#18181B;--r:14px}}
+    body{{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}}
+    header{{background:var(--dark);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}}
+    .header-brand{{display:flex;align-items:center;gap:12px}}
+    .header-logo{{height:28px;width:auto}}
+    .back-link{{font-size:12px;font-weight:600;color:var(--muted);text-decoration:none;padding:6px 14px;border:1px solid #333;border-radius:8px;transition:color .15s,border-color .15s}}
+    .back-link:hover{{color:#fff;border-color:#666}}
+    .main{{max-width:640px;margin:0 auto;padding:32px 24px 64px;display:flex;flex-direction:column;gap:24px}}
+    .page-title{{font-size:20px;font-weight:800;letter-spacing:-.5px}}
+    .page-sub{{font-size:13px;color:var(--muted);margin-top:4px}}
+    .panel{{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);overflow:hidden}}
+    .member-card{{display:flex;align-items:center;gap:16px;padding:16px 24px;border-bottom:1px solid var(--border)}}
+    .member-card:last-child{{border-bottom:none}}
+    .member-avatar{{width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--border);flex-shrink:0}}
+    .member-avatar.initials{{background:var(--coral);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;border:none}}
+    .member-info{{flex:1;min-width:0}}
+    .member-name{{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+    .member-role{{font-size:12px;color:var(--muted);margin-top:2px}}
+    .member-meta{{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+    .edit-btn{{flex-shrink:0;padding:7px 16px;background:var(--coral);color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;transition:background .15s}}
+    .edit-btn:hover{{background:#e55a44}}
+    @media(max-width:640px){{.main{{padding:20px 16px 48px}};header{{padding:0 16px}}}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="header-brand">
+    <img src="/logo.png" alt="Feest" class="header-logo"/>
+  </div>
+  <a class="back-link" href="/xadmin">&#8592; Dashboard</a>
+</header>
+<div class="main">
+  <div>
+    <h1 class="page-title">Team Members</h1>
+    <p class="page-sub">Update names, roles, contact info, and photos for each card.</p>
+  </div>
+  <div class="panel">{cards_html}</div>
+</div>
+</body></html>"""
+
+@app.get("/xadmin/members/{slug}/edit", response_class=HTMLResponse)
+async def member_edit_get(slug: str, saved: str = "", _=Depends(require_admin)):
+    slug = validate_slug(slug)
+    db = get_db()
+    row = db.execute("SELECT * FROM members WHERE slug=?", (slug,)).fetchone()
+    db.close()
+    if not row:
+        raise HTTPException(status_code=404)
+    return _member_edit_page(slug, dict(row), saved=bool(saved))
+
+@app.post("/xadmin/members/{slug}/edit", response_class=HTMLResponse)
+async def member_edit_post(
+    slug: str,
+    full_name: str = Form(...),
+    role: str = Form(""),
+    phone: str = Form(""),
+    email: str = Form(""),
+    linkedin: str = Form(""),
+    photo: UploadFile = File(None),
+    _=Depends(require_admin),
+):
+    slug = validate_slug(slug)
+    db = get_db()
+    row = db.execute("SELECT * FROM members WHERE slug=?", (slug,)).fetchone()
+    if not row:
+        db.close()
+        raise HTTPException(status_code=404)
+    member = dict(row)
+
+    # Handle photo upload
+    new_ext = None
+    if photo and photo.filename:
+        ctype = photo.content_type or ""
+        if ctype not in ALLOWED_PHOTO_TYPES:
+            db.close()
+            return _member_edit_page(slug, member, error="Photo must be JPG, PNG or WebP.")
+        data = await photo.read()
+        if len(data) > 5 * 1024 * 1024:
+            db.close()
+            return _member_edit_page(slug, member, error="Photo too large — max 5 MB.")
+        new_ext = ALLOWED_PHOTO_TYPES[ctype]
+        PHOTOS_DIR.mkdir(parents=True, exist_ok=True)
+        # Remove any old photo for this slug
+        for old in PHOTOS_DIR.glob(f"{slug}.*"):
+            old.unlink(missing_ok=True)
+        (PHOTOS_DIR / f"{slug}.{new_ext}").write_bytes(data)
+
+    db.execute("""
+        UPDATE members
+        SET full_name=?, role=?, phone=?, email=?, linkedin=?
+            {photo_clause}
+        WHERE slug=?
+    """.replace("{photo_clause}", ", photo_ext=?" if new_ext else ""),
+        ([full_name.strip(), role.strip(), phone.strip(), email.strip(), linkedin.strip()]
+         + ([new_ext] if new_ext else [])
+         + [slug])
+    )
+    db.commit()
+    db.close()
+    return RedirectResponse(url=f"/xadmin/members/{slug}/edit?saved=1", status_code=302)
+
+# ─────────────────────────────────────────
 # Routes — Admin dashboard
 # ─────────────────────────────────────────
 @app.get("/xadmin", response_class=HTMLResponse)
@@ -987,7 +1229,7 @@ async def admin_dashboard(request: Request, page: int = 1, _=Depends(require_adm
 
     .stat-num {{
       font-size: 30px;
-      font-weight: 800;
+      font-weight: 600;
       color: var(--dark);
       line-height: 1;
     }}
@@ -1179,7 +1421,23 @@ async def admin_dashboard(request: Request, page: int = 1, _=Depends(require_adm
     @media (max-width: 640px) {{
       .main {{ padding: 20px 16px 48px; }}
       header {{ padding: 0 16px; }}
-      .stats-grid {{ grid-template-columns: 1fr; gap: 12px; }}
+      /* Stat cards — horizontal snap carousel on mobile */
+      .stats-grid {{
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: 12px;
+        padding-bottom: 4px;
+        /* hide scrollbar */
+        scrollbar-width: none;
+      }}
+      .stats-grid::-webkit-scrollbar {{ display: none; }}
+      .stat-card {{
+        flex: 0 0 calc(50% - 6px);
+        scroll-snap-align: start;
+        min-width: 0;
+      }}
       thead th, tbody td {{ padding-left: 16px; padding-right: 16px; }}
       .td-share {{ display: none; }}
     }}
@@ -1191,7 +1449,10 @@ async def admin_dashboard(request: Request, page: int = 1, _=Depends(require_adm
   <div class="header-brand">
     <img src="/logo.png" alt="Feest" class="header-logo"/>
   </div>
-  <a class="signout" href="/xadmin/logout">Sign out</a>
+  <div style="display:flex;gap:10px;align-items:center">
+    <a class="signout" href="/xadmin/members" style="color:#fff;border-color:#555">Team</a>
+    <a class="signout" href="/xadmin/logout">Sign out</a>
+  </div>
 </header>
 
 <div class="main">
