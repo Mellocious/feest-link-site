@@ -644,7 +644,7 @@ async def login_page(error: str = ""):
   <style>
     *{{box-sizing:border-box;margin:0;padding:0}}
     html,body{{height:100%}}
-    body{{font-family:'Montserrat',sans-serif;background:#1C1C1E;height:100%;display:flex;align-items:center;justify-content:center;padding:24px}}
+    body{{font-family:'Montserrat',sans-serif;background:#1C1C1E;min-height:100svh;display:flex;align-items:center;justify-content:center;padding:24px}}
     .box{{background:#fff;border-radius:16px;padding:36px 32px 32px;width:100%;max-width:340px;box-shadow:0 8px 40px rgba(0,0,0,.45)}}
     .logo-wrap{{display:flex;justify-content:center;margin-bottom:24px}}
     .logo-wrap img{{height:28px;width:auto}}
