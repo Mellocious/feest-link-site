@@ -647,7 +647,7 @@ async def login_page(error: str = ""):
     body{{font-family:'Montserrat',sans-serif;background:#F4F4F5;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:20px}}
     .brand{{display:flex;align-items:center;gap:8px}}
     .brand img{{height:26px;width:auto}}
-    .card{{background:#fff;border-radius:12px;border:1px solid #E4E4E7;padding:32px;width:100%;max-width:360px}}
+    .card{{width:100%;max-width:360px}}
     .card-header{{margin-bottom:24px}}
     .card-title{{font-size:18px;font-weight:700;color:#09090B;margin-bottom:4px}}
     .card-desc{{font-size:13px;color:#71717A}}
