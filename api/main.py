@@ -328,33 +328,252 @@ async def card_page(slug: str, request: Request):
         og_image=og_image,
     ) + f"""
 <style>
-  .card{{width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:0}}
-  .avatar,.avatar-initials{{width:108px;height:108px;border-radius:50%;object-fit:cover;border:3px solid var(--primary);box-shadow:var(--shadow);margin-bottom:16px}}
-  .avatar-initials{{background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:800}}
-  h1{{font-size:22px;font-weight:800;letter-spacing:-.5px;text-align:center}}
-  .role{{font-size:13px;font-weight:600;color:var(--muted);margin:4px 0 28px;text-align:center}}
-  .links{{width:100%;display:flex;flex-direction:column;gap:12px;margin-bottom:32px}}
-  .btn{{display:flex;align-items:center;gap:14px;width:100%;padding:15px 20px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-family:'Montserrat',sans-serif;font-size:14px;font-weight:600;box-shadow:var(--shadow);transition:transform .18s,box-shadow .18s,border-color .18s;cursor:pointer}}
-  .btn:hover{{transform:translateY(-2px);box-shadow:var(--shadow-hover);border-color:var(--primary)}}
-  .btn:active{{transform:scale(.98)}}
-  .btn.primary{{background:var(--primary);border-color:var(--primary);color:#fff}}
-  .btn.primary:hover{{background:var(--primary-dark);border-color:var(--primary-dark)}}
-  .btn.outline{{background:transparent;border:1.5px solid var(--primary);color:var(--primary);box-shadow:var(--shadow)}}
-  .btn.outline:hover{{background:rgba(247,113,91,.06)}}
-  .btn svg{{width:20px;height:20px;flex-shrink:0}}
-  .feest-link{{margin-top:8px;font-size:12px;color:var(--muted);font-weight:500}}
-  .feest-link a{{color:var(--primary)}}
-  .feest-link a:hover{{text-decoration:underline}}
-  @media(max-width:380px){{body{{padding:32px 16px 48px}};h1{{font-size:20px}}}}
+  /* ── Card shell ── */
+  body {{ padding: 0 !important; background: #F5F5F5 !important; align-items: stretch !important; }}
+
+  .card-page {{
+    min-height: 100vh;
+    background: #F5F5F5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }}
+
+  /* ── Brand header ── */
+  .brand-header {{
+    width: 100%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 24px 20px;
+    border-bottom: 1px solid #EFEFEF;
+  }}
+
+  .brand-logo {{
+    height: 32px;
+    width: auto;
+  }}
+
+  /* ── White card body ── */
+  .card-body {{
+    width: 100%;
+    max-width: 480px;
+    background: #fff;
+    flex: 1;
+    padding: 32px 24px 48px;
+    display: flex;
+    flex-direction: column;
+  }}
+
+  /* ── Avatar ── */
+  .avatar-wrap {{
+    margin-bottom: 20px;
+  }}
+
+  .avatar, .avatar-initials {{
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #EFEFEF;
+  }}
+
+  .avatar-initials {{
+    background: var(--primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 800;
+    border: 3px solid #EFEFEF;
+  }}
+
+  /* ── Name block ── */
+  .name-block {{
+    margin-bottom: 28px;
+  }}
+
+  .name-block h1 {{
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #1A1A1A;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }}
+
+  .name-block .job-title {{
+    font-size: 15px;
+    font-weight: 500;
+    color: #666;
+    line-height: 1.5;
+  }}
+
+  .name-block .company {{
+    font-size: 15px;
+    font-weight: 600;
+    color: #444;
+  }}
+
+  /* ── Contact rows ── */
+  .contact-rows {{
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 32px;
+  }}
+
+  .contact-row {{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid #F2F2F2;
+    text-decoration: none;
+    color: inherit;
+    transition: opacity .15s;
+  }}
+
+  .contact-row:last-child {{ border-bottom: none; }}
+  .contact-row:hover {{ opacity: 0.75; }}
+
+  .row-icon {{
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }}
+
+  .row-icon svg {{
+    width: 20px;
+    height: 20px;
+  }}
+
+  .row-text {{
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }}
+
+  .row-label {{
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #999;
+  }}
+
+  .row-value {{
+    font-size: 15px;
+    font-weight: 600;
+    color: #1A1A1A;
+  }}
+
+  /* ── Save Contact CTA ── */
+  .save-btn {{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 17px 24px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .18s, transform .15s;
+    margin-top: auto;
+  }}
+
+  .save-btn:hover {{ background: var(--primary-dark); transform: translateY(-1px); }}
+  .save-btn:active {{ transform: scale(.98); }}
+  .save-btn svg {{ width: 20px; height: 20px; flex-shrink: 0; }}
+
+  /* ── Footer ── */
+  .card-footer {{
+    text-align: center;
+    padding: 20px 0 8px;
+    font-size: 12px;
+    color: #bbb;
+    font-weight: 500;
+  }}
+
+  .card-footer a {{ color: var(--primary); text-decoration: none; }}
 </style>
-<div class="card">
-  {photo_html}
-  <h1>{name}</h1>
-  <p class="role">{role} · Feest</p>
-  <div class="links">
-    {btns_html}
+
+<div class="card-page">
+
+  <div class="brand-header">
+    <img src="/logo.png" alt="Feest" class="brand-logo"/>
   </div>
-  <p class="feest-link">Powered by <a href="https://link.usefeest.com">Feest</a></p>
+
+  <div class="card-body">
+
+    <div class="avatar-wrap">
+      {photo_html}
+    </div>
+
+    <div class="name-block">
+      <h1>{name}</h1>
+      <p class="job-title">{role}</p>
+      <p class="company">Feest</p>
+    </div>
+
+    <div class="contact-rows">
+      {''.join([
+        f'''<a class="contact-row" href="tel:{phone}">
+          <div class="row-icon">{icon_phone_white()}</div>
+          <div class="row-text">
+            <span class="row-label">Phone</span>
+            <span class="row-value">{phone}</span>
+          </div>
+        </a>''' if phone_raw else '',
+
+        f'''<a class="contact-row" href="https://wa.me/234{esc(phone_raw.lstrip('0'))}" target="_blank" rel="noopener">
+          <div class="row-icon">{icon_wa_white()}</div>
+          <div class="row-text">
+            <span class="row-label">WhatsApp</span>
+            <span class="row-value">Chat on WhatsApp</span>
+          </div>
+        </a>''' if phone_raw else '',
+
+        f'''<a class="contact-row" href="mailto:{email}">
+          <div class="row-icon">{icon_email_white()}</div>
+          <div class="row-text">
+            <span class="row-label">Email</span>
+            <span class="row-value">{email}</span>
+          </div>
+        </a>''' if email_raw else '',
+
+        f'''<a class="contact-row" href="{linkedin}" target="_blank" rel="noopener">
+          <div class="row-icon">{icon_linkedin_white()}</div>
+          <div class="row-text">
+            <span class="row-label">LinkedIn</span>
+            <span class="row-value">Connect on LinkedIn</span>
+          </div>
+        </a>''' if linkedin_raw else '',
+      ])}
+    </div>
+
+    <a class="save-btn" href="/card/{slug_esc}/vcard" download="{esc(name_raw.replace(' ','_'))}.vcf">
+      {icon_contact_white()} Save Contact
+    </a>
+
+    <p class="card-footer">Powered by <a href="https://link.usefeest.com">Feest</a></p>
+
+  </div>
+
 </div>
 </body></html>
 """
@@ -1105,6 +1324,24 @@ def _route_label(route: str) -> str:
         "card/gift":    "Gift's Card",
     }
     return labels.get(route, route.replace("/", " / ").title())
+
+# ─────────────────────────────────────────
+# Inline SVG icons — white versions (for coral circle backgrounds)
+# ─────────────────────────────────────────
+def icon_wa_white():
+    return """<svg viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.104.547 4.08 1.504 5.797L.057 23.886a.5.5 0 00.619.61l6.241-1.637A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.944 9.944 0 01-5.088-1.393l-.365-.218-3.782.992.992-3.688-.236-.382A9.944 9.944 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>"""
+
+def icon_phone_white():
+    return """<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>"""
+
+def icon_email_white():
+    return """<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>"""
+
+def icon_linkedin_white():
+    return """<svg viewBox="0 0 24 24" fill="white"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>"""
+
+def icon_contact_white():
+    return """<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>"""
 
 # ─────────────────────────────────────────
 # Inline SVG icons
