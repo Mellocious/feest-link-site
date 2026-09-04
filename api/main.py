@@ -643,22 +643,23 @@ async def login_page(error: str = ""):
   <link href="{FONT}" rel="stylesheet"/>
   <style>
     *{{box-sizing:border-box;margin:0;padding:0}}
-    body{{font-family:'Montserrat',sans-serif;background:#FFF6E8;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}}
-    .box{{background:#fff;border-radius:20px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 4px 32px rgba(247,113,91,.13)}}
-    h1{{font-size:20px;font-weight:800;margin-bottom:6px}}
-    .sub{{font-size:13px;color:#9E9E9E;margin-bottom:28px}}
-    label{{display:block;font-size:12px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#9E9E9E;margin-bottom:6px}}
-    input{{width:100%;padding:12px 14px;border:1.5px solid rgba(247,113,91,.2);border-radius:10px;font-family:'Montserrat',sans-serif;font-size:14px;outline:none;transition:border-color .18s;margin-bottom:16px}}
+    body{{font-family:'Montserrat',sans-serif;background:#111;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}}
+    .box{{background:#fff;border-radius:16px;padding:40px 36px;width:100%;max-width:360px}}
+    .logo-wrap{{display:flex;justify-content:center;margin-bottom:32px}}
+    .logo-wrap img{{height:30px;width:auto}}
+    label{{display:block;font-size:11px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#999;margin-bottom:6px}}
+    input{{width:100%;padding:12px 14px;border:1.5px solid #E4E4E7;border-radius:10px;font-family:'Montserrat',sans-serif;font-size:14px;outline:none;transition:border-color .18s;margin-bottom:16px;color:#111}}
     input:focus{{border-color:#F7715B}}
-    button{{width:100%;padding:14px;background:#F7715B;color:#fff;border:none;border-radius:10px;font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:background .18s}}
+    button{{width:100%;padding:14px;background:#F7715B;color:#fff;border:none;border-radius:10px;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:background .18s;margin-top:4px}}
     button:hover{{background:#e55a44}}
-    .err{{color:#e55a44;font-size:13px;font-weight:600;margin-bottom:16px;text-align:center}}
+    .err{{color:#e55a44;font-size:12px;font-weight:600;margin-bottom:16px;text-align:center}}
   </style>
 </head>
 <body>
 <div class="box">
-  <h1>Admin Login</h1>
-  <p class="sub">Feest Links Dashboard</p>
+  <div class="logo-wrap">
+    <img src="/logo.png" alt="Feest"/>
+  </div>
   {err_html}
   <form method="POST" action="/xadmin/login">
     <input type="hidden" name="csrf_token" value="{csrf_token}"/>
@@ -666,7 +667,7 @@ async def login_page(error: str = ""):
     <input name="username" type="text" autocomplete="username" required/>
     <label>Password</label>
     <input name="password" type="password" autocomplete="current-password" required/>
-    <button type="submit">Sign In</button>
+    <button type="submit">Sign in</button>
   </form>
 </div>
 </body></html>"""
